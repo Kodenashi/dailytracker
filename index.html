@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>📞 Daily Calls & EOC Tracker</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #f8f9fa, #e0f7fa);
+      margin: 0;
+      padding: 40px 20px;
+      color: #333;
+    }
+
+    h2 {
+      text-align: center;
+      color: #00796B;
+      margin-bottom: 30px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th {
+      background-color: #26a69a;
+      color: white;
+      padding: 12px;
+      font-size: 16px;
+    }
+
+    td {
+      padding: 10px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+
+    input[type="date"],
+    input[type="number"] {
+      width: 90%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      transition: border-color 0.3s;
+    }
+
+    input[type="date"]:focus,
+    input[type="number"]:focus {
+      border-color: #26a69a;
+      outline: none;
+    }
+
+    span[id^="percent"] {
+      font-weight: bold;
+      color: #00796B;
+    }
+
+    .totals {
+      margin-top: 30px;
+      background: #ffffff;
+      border-left: 6px solid #26a69a;
+      padding: 15px 20px;
+      font-size: 18px;
+      line-height: 1.6;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .totals span {
+      color: #00796B;
+      font-weight: bold;
+    }
+
+    .button-container {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    button {
+      background-color: #e53935;
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin: 0 5px;
+    }
+
+    button:hover {
+      background-color: #c62828;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    table,
+    .totals,
+    .button-container {
+      animation: fadeIn 0.6s ease-in;
+    }
+  </style>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+
+  <script>
+    // TODO: Replace with your Firebase project config
+    const firebaseConfig = {
+      apiKey: "AIzaSyArtYVTTwr3mcXR_VUyz3t06RDpnvbUA2I",
+      authDomain: "calls-tracker-13a3c.firebaseapp.com",
+      projectId: "calls-tracker-13a3c",
+      storageBucket: "calls-tracker-13a3c.firebasestorage.app",
+      messagingSenderId: "452879479448",
+      appId: "1:452879479448:web:5a3ac38fb95cde33f896ed",
+      measurementId: "G-4DR3D6N3YC"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    function saveToFirebase(data) {
+      const timestamp = Date.now();
+      db.ref("dailyReports/" + timestamp)
+        .set(data)
+        .then(() => {
+          console.log("Data saved to Firebase at", timestamp);
+        })
+        .catch((error) => {
+          console.error("Firebase error:", error);
+        });
+    }
+  </script>
+</head>
+<body>
+
+<h2>📊 Daily Calls & EOC Tracker</h2>
+
+<form id="dataForm">
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Total Calls</th>
+        <th>EOC Received</th>
+        <th>% EOC</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><input type="date" name="date1" /></td>
+        <td><input type="number" name="calls1" min="0" oninput="updateTable()" /></td>
+        <td><input type="number" name="eoc1" min="0" oninput="updateTable()" /></td>
+        <td><span id="percent1">0%</span></td>
+      </tr>
+      <tr>
+        <td><input type="date" name="date2" /></td>
+        <td><input type="number" name="calls2" min="0" oninput="updateTable()" /></td>
+        <td><input type="number" name="eoc2" min="0" oninput="updateTable()" /></td>
+        <td><span id="percent2">0%</span></td>
+      </tr>
+      <tr>
+        <td><input type="date" name="date3" /></td>
+        <td><input type="number" name="calls3" min="0" oninput="updateTable()" /></td>
+        <td><input type="number" name="eoc3" min="0" oninput="updateTable()" /></td>
+        <td><span id="percent3">0%</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="totals">
+    📞 Total Calls: <span id="totalCalls">0</span><br />
+    📨 Total EOC: <span id="totalEOC">0</span><br />
+    📈 Overall EOC %: <span id="overallPercent">0%</span>
+  </div>
+
+  <div class="button-container">
+    <button type="button" onclick="resetForm()">🗑️ Remove All</button>
+  </div>
+</form>
+
+<script>
+  function updateTable() {
+    let totalCalls = 0;
+    let totalEOC = 0;
+
+    const data = [];
+
+    for (let i = 1; i <= 3; i++) {
+      const calls = parseInt(document.querySelector(`[name="calls${i}"]`).value) || 0;
+      const eoc = parseInt(document.querySelector(`[name="eoc${i}"]`).value) || 0;
+      const date = document.querySelector(`[name="date${i}"]`).value;
+
+      totalCalls += calls;
+      totalEOC += eoc;
+
+      const percent = calls > 0 ? (eoc / calls) * 100 : 0;
+      document.getElementById(`percent${i}`).innerText = percent.toFixed(2) + "%";
+
+      if (date) {
+        data.push({ date, calls, eoc });
+      }
+    }
+
+    document.getElementById("totalCalls").innerText = totalCalls;
+    document.getElementById("totalEOC").innerText = totalEOC;
+
+    const overallPercent = totalCalls > 0 ? (totalEOC / totalCalls) * 100 : 0;
+    document.getElementById("overallPercent").innerText = overallPercent.toFixed(2) + "%";
+
+    // Auto-submit to Firebase
+    if (data.length > 0) {
+      saveToFirebase(data);
+    }
+  }
+
+  function resetForm() {
+    for (let i = 1; i <= 3; i++) {
+      document.querySelector(`[name="date${i}"]`).value = "";
+      document.querySelector(`[name="calls${i}"]`).value = "";
+      document.querySelector(`[name="eoc${i}"]`).value = "";
+      document.getElementById(`percent${i}`).innerText = "0%";
+    }
+
+    document.getElementById("totalCalls").innerText = "0";
+    document.getElementById("totalEOC").innerText = "0";
+    document.getElementById("overallPercent").innerText = "0%";
+  }
+</script>
+
+</body>
+</html>
