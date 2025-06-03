@@ -196,11 +196,13 @@
 </form>
 
 <script>
+  const INPUT_COUNT = 3;
+
   function updateTable() {
     let totalCalls = 0;
     let totalEOC = 0;
 
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= INPUT_COUNT; i++) {
       const calls = parseInt(document.querySelector(`[name="calls${i}"]`).value) || 0;
       const eoc = parseInt(document.querySelector(`[name="eoc${i}"]`).value) || 0;
       const percent = calls > 0 ? (eoc / calls) * 100 : 0;
@@ -215,9 +217,33 @@
     document.getElementById("overallPercent").innerText = overallPercent.toFixed(2) + "%";
   }
 
+  function saveLocalData() {
+    const localData = [];
+    for (let i = 1; i <= INPUT_COUNT; i++) {
+      localData.push({
+        date: document.querySelector(`[name="date${i}"]`).value,
+        calls: document.querySelector(`[name="calls${i}"]`).value,
+        eoc: document.querySelector(`[name="eoc${i}"]`).value
+      });
+    }
+    localStorage.setItem('callData', JSON.stringify(localData));
+  }
+
+  function loadLocalData() {
+    const saved = JSON.parse(localStorage.getItem('callData'));
+    if (saved) {
+      for (let i = 1; i <= INPUT_COUNT; i++) {
+        document.querySelector(`[name="date${i}"]`).value = saved[i - 1].date || "";
+        document.querySelector(`[name="calls${i}"]`).value = saved[i - 1].calls || "";
+        document.querySelector(`[name="eoc${i}"]`).value = saved[i - 1].eoc || "";
+      }
+      updateTable();
+    }
+  }
+
   function submitForm() {
     const data = [];
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= INPUT_COUNT; i++) {
       const date = document.querySelector(`[name="date${i}"]`).value;
       const calls = parseInt(document.querySelector(`[name="calls${i}"]`).value) || 0;
       const eoc = parseInt(document.querySelector(`[name="eoc${i}"]`).value) || 0;
@@ -236,7 +262,7 @@
   }
 
   function resetForm() {
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= INPUT_COUNT; i++) {
       document.querySelector(`[name="date${i}"]`).value = "";
       document.querySelector(`[name="calls${i}"]`).value = "";
       document.querySelector(`[name="eoc${i}"]`).value = "";
@@ -245,8 +271,24 @@
     document.getElementById("totalCalls").innerText = "0";
     document.getElementById("totalEOC").innerText = "0";
     document.getElementById("overallPercent").innerText = "0%";
+    localStorage.removeItem('callData');
   }
+
+  // Attach listeners to inputs to update localStorage automatically
+  window.addEventListener('DOMContentLoaded', () => {
+    loadLocalData();
+    for (let i = 1; i <= INPUT_COUNT; i++) {
+      ['date', 'calls', 'eoc'].forEach(field => {
+        const input = document.querySelector(`[name="${field}${i}"]`);
+        input.addEventListener('input', () => {
+          updateTable();
+          saveLocalData();
+        });
+      });
+    }
+  });
 </script>
+
 
 </body>
 </html>
