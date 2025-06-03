@@ -82,7 +82,7 @@
     }
 
     button {
-      background-color: #e53935;
+      background-color: #26a69a;
       color: white;
       padding: 10px 20px;
       border: none;
@@ -94,59 +94,58 @@
     }
 
     button:hover {
-      background-color: #c62828;
+      background-color: #2bbbad;
     }
 
     @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
-    table,
-    .totals,
-    .button-container {
+    table, .totals, .button-container {
       animation: fadeIn 0.6s ease-in;
     }
   </style>
 
-  <!-- Firebase SDKs -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-  <script>
-    // TODO: Replace with your Firebase project config
-    const firebaseConfig = {
-      apiKey: "AIzaSyArtYVTTwr3mcXR_VUyz3t06RDpnvbUA2I",
-      authDomain: "calls-tracker-13a3c.firebaseapp.com",
-      projectId: "calls-tracker-13a3c",
-      storageBucket: "calls-tracker-13a3c.firebasestorage.app",
-      messagingSenderId: "452879479448",
-      appId: "1:452879479448:web:5a3ac38fb95cde33f896ed",
-      measurementId: "G-4DR3D6N3YC"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyArtYVTTwr3mcXR_VUyz3t06RDpnvbUA2I",
+    authDomain: "calls-tracker-13a3c.firebaseapp.com",
+    projectId: "calls-tracker-13a3c",
+    storageBucket: "calls-tracker-13a3c.firebasestorage.app",
+    messagingSenderId: "452879479448",
+    appId: "1:452879479448:web:5a3ac38fb95cde33f896ed",
+    measurementId: "G-4DR3D6N3YC"
+  };
 
-    // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    function saveToFirebase(data) {
-      const timestamp = Date.now();
-      db.ref("dailyReports/" + timestamp)
-        .set(data)
-        .then(() => {
-          console.log("Data saved to Firebase at", timestamp);
-        })
-        .catch((error) => {
-          console.error("Firebase error:", error);
-        });
+  // Function to save to Firestore
+  async function saveToFirestore(dataArray) {
+    try {
+      const timestamp = Date.now().toString();
+      const reportRef = collection(db, "dailyReports");
+
+      await addDoc(reportRef, {
+        timestamp,
+        records: dataArray
+      });
+
+      console.log("Saved to Firestore:", timestamp);
+    } catch (error) {
+      console.error("Error saving to Firestore:", error);
     }
-  </script>
+  }
+
+  // Expose the function to window so it can be used elsewhere
+  window.saveToFirebase = saveToFirestore;
+</script>
+
 </head>
 <body>
 
@@ -191,6 +190,7 @@
   </div>
 
   <div class="button-container">
+    <button type="button" onclick="submitForm()">✅ Submit</button>
     <button type="button" onclick="resetForm()">🗑️ Remove All</button>
   </div>
 </form>
@@ -200,33 +200,38 @@
     let totalCalls = 0;
     let totalEOC = 0;
 
-    const data = [];
-
     for (let i = 1; i <= 3; i++) {
       const calls = parseInt(document.querySelector(`[name="calls${i}"]`).value) || 0;
       const eoc = parseInt(document.querySelector(`[name="eoc${i}"]`).value) || 0;
-      const date = document.querySelector(`[name="date${i}"]`).value;
-
-      totalCalls += calls;
-      totalEOC += eoc;
-
       const percent = calls > 0 ? (eoc / calls) * 100 : 0;
       document.getElementById(`percent${i}`).innerText = percent.toFixed(2) + "%";
+      totalCalls += calls;
+      totalEOC += eoc;
+    }
+
+    const overallPercent = totalCalls > 0 ? (totalEOC / totalCalls) * 100 : 0;
+    document.getElementById("totalCalls").innerText = totalCalls;
+    document.getElementById("totalEOC").innerText = totalEOC;
+    document.getElementById("overallPercent").innerText = overallPercent.toFixed(2) + "%";
+  }
+
+  function submitForm() {
+    const data = [];
+    for (let i = 1; i <= 3; i++) {
+      const date = document.querySelector(`[name="date${i}"]`).value;
+      const calls = parseInt(document.querySelector(`[name="calls${i}"]`).value) || 0;
+      const eoc = parseInt(document.querySelector(`[name="eoc${i}"]`).value) || 0;
 
       if (date) {
         data.push({ date, calls, eoc });
       }
     }
 
-    document.getElementById("totalCalls").innerText = totalCalls;
-    document.getElementById("totalEOC").innerText = totalEOC;
-
-    const overallPercent = totalCalls > 0 ? (totalEOC / totalCalls) * 100 : 0;
-    document.getElementById("overallPercent").innerText = overallPercent.toFixed(2) + "%";
-
-    // Auto-submit to Firebase
     if (data.length > 0) {
       saveToFirebase(data);
+      alert("✅ Data submitted to Firebase!");
+    } else {
+      alert("⚠️ Please enter at least one valid row with a date.");
     }
   }
 
@@ -237,7 +242,6 @@
       document.querySelector(`[name="eoc${i}"]`).value = "";
       document.getElementById(`percent${i}`).innerText = "0%";
     }
-
     document.getElementById("totalCalls").innerText = "0";
     document.getElementById("totalEOC").innerText = "0";
     document.getElementById("overallPercent").innerText = "0%";
