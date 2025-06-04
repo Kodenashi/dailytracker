@@ -1,294 +1,264 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8" />
-  <title>📞 Daily Calls & EOC Tracker</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(to right, #f8f9fa, #e0f7fa);
-      margin: 0;
-      padding: 40px 20px;
-      color: #333;
-    }
+    <meta charset="UTF-8">
+    <title>Daily Calls/EOC Tracker</title>
+    <script type="module">
+        // Firebase SDKs
+        import {
+            initializeApp
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            getDocs,
+            deleteDoc,
+            doc
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import {
+            getAnalytics
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
-    h2 {
-      text-align: center;
-      color: #00796B;
-      margin-bottom: 30px;
-    }
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC1tFG-E4XrGCDms5cdfyBtuo5s8D-d7og",
+            authDomain: "dailytracker-f9522.firebaseapp.com",
+            projectId: "dailytracker-f9522",
+            storageBucket: "dailytracker-f9522.firebasestorage.app",
+            messagingSenderId: "715369191108",
+            appId: "1:715369191108:web:3201329bfaddf4dd3e1b91",
+            measurementId: "G-S27WN4XM5K"
+        };
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: #ffffff;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      border-radius: 8px;
-      overflow: hidden;
-    }
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+        const entriesRef = collection(db, "call_tracker");
 
-    th {
-      background-color: #26a69a;
-      color: white;
-      padding: 12px;
-      font-size: 16px;
-    }
+        // Load existing entries from Firestore
+        async function loadEntries() {
+            const snapshot = await getDocs(entriesRef);
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                addRowToTable(docSnap.id, data.date, data.calls, data.surveys, data.percentage);
+            });
+            updateTotals();
+        }
 
-    td {
-      padding: 10px;
-      text-align: center;
-      border-bottom: 1px solid #ddd;
-    }
+        // Add entry to Firestore and table
+        async function addEntryToFirestore(date, calls, surveys, percentage) {
+            const docRef = await addDoc(entriesRef, {
+                date,
+                calls,
+                surveys,
+                percentage
+            });
+            addRowToTable(docRef.id, date, calls, surveys, percentage);
+            updateTotals();
+        }
 
-    input[type="date"],
-    input[type="number"] {
-      width: 90%;
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      transition: border-color 0.3s;
-    }
+        // Delete one entry
+        async function deleteEntryFromFirestore(id, rowElement) {
+            await deleteDoc(doc(entriesRef, id));
+            rowElement.remove();
+            updateTotals();
+        }
 
-    input[type="date"]:focus,
-    input[type="number"]:focus {
-      border-color: #26a69a;
-      outline: none;
-    }
+        // Load entries on page load
+        window.addEventListener("DOMContentLoaded", loadEntries);
 
-    span[id^="percent"] {
-      font-weight: bold;
-      color: #00796B;
-    }
+        // Global functions
+        window.addEntry = async function() {
+            const date = document.getElementById("dateInput").value;
+            const calls = parseInt(document.getElementById("callsInput").value);
+            const surveys = parseInt(document.getElementById("surveysInput").value);
 
-    .totals {
-      margin-top: 30px;
-      background: #ffffff;
-      border-left: 6px solid #26a69a;
-      padding: 15px 20px;
-      font-size: 18px;
-      line-height: 1.6;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
-    }
+            if (!date || isNaN(calls) || isNaN(surveys)) {
+                alert("Please enter all fields correctly.");
+                return;
+            }
 
-    .totals span {
-      color: #00796B;
-      font-weight: bold;
-    }
+            const percentage = ((surveys / calls) * 100).toFixed(2);
+            await addEntryToFirestore(date, calls, surveys, percentage);
 
-    .button-container {
-      margin-top: 20px;
-      text-align: center;
-    }
+            document.getElementById("dateInput").value = "";
+            document.getElementById("callsInput").value = "";
+            document.getElementById("surveysInput").value = "";
+        };
 
-    button {
-      background-color: #26a69a;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background-color 0.3s ease;
-      margin: 0 5px;
-    }
+        window.deleteRow = async function(button) {
+            const row = button.closest("tr");
+            const entryId = row.dataset.id;
+            await deleteEntryFromFirestore(entryId, row);
+        };
 
-    button:hover {
-      background-color: #2bbbad;
-    }
+        window.removeAll = async function() {
+            if (!confirm("Are you sure you want to remove all entries?")) return;
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+            const snapshot = await getDocs(entriesRef);
+            const deletes = snapshot.docs.map(docSnap => deleteDoc(docSnap.ref));
+            await Promise.all(deletes);
 
-    table, .totals, .button-container {
-      animation: fadeIn 0.6s ease-in;
-    }
-  </style>
+            document.getElementById("tableBody").innerHTML = "";
+            updateTotals();
+        };
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        function addRowToTable(id, date, calls, surveys, percentage) {
+            const tableBody = document.getElementById("tableBody");
+            const row = document.createElement("tr");
+            row.dataset.id = id;
+            row.innerHTML = `
+        <td>${date}</td>
+        <td>${calls}</td>
+        <td>${surveys}</td>
+        <td>${percentage}%</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
+            tableBody.appendChild(row);
+        }
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAdo4MAcgLqBM_N1wgIrUAV4VGeQsyjaqY",
-    authDomain: "dailytracker-7ae92.firebaseapp.com",
-    projectId: "dailytracker-7ae92",
-    storageBucket: "dailytracker-7ae92.firebasestorage.app",
-    messagingSenderId: "862423398643",
-    appId: "1:862423398643:web:f5429c4dd72563b4815f86",
-    measurementId: "G-719GFVQ121"
-  };
+        function updateTotals() {
+            const rows = document.querySelectorAll("#tableBody tr");
+            let totalCalls = 0,
+                totalSurveys = 0;
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+            rows.forEach(row => {
+                const calls = parseInt(row.cells[1].textContent) || 0;
+                const surveys = parseInt(row.cells[2].textContent) || 0;
+                totalCalls += calls;
+                totalSurveys += surveys;
+            });
 
-  // Function to save to Firestore
-  async function saveToFirestore(dataArray) {
-    try {
-      const timestamp = Date.now().toString();
-      const reportRef = collection(db, "dailyReports");
+            document.getElementById("totalCalls").textContent = totalCalls;
+            document.getElementById("totalSurveys").textContent = totalSurveys;
+            document.getElementById("totalPercentage").textContent =
+                totalCalls ? ((totalSurveys / totalCalls) * 100).toFixed(2) + "%" : "0%";
+        }
+        // Attach form submission handler
+        document.getElementById("trackerForm").addEventListener("submit", async function(e) {
+            e.preventDefault(); // prevent actual form submission
 
-      await addDoc(reportRef, {
-        timestamp,
-        records: dataArray
-      });
+            const date = document.getElementById("dateInput").value;
+            const calls = parseInt(document.getElementById("callsInput").value);
+            const surveys = parseInt(document.getElementById("surveysInput").value);
 
-      console.log("Saved to Firestore:", timestamp);
-    } catch (error) {
-      console.error("Error saving to Firestore:", error);
-    }
-  }
+            if (!date || isNaN(calls) || isNaN(surveys)) {
+                alert("Please enter all fields correctly.");
+                return;
+            }
 
-  // Expose the function to window so it can be used elsewhere
-  window.saveToFirebase = saveToFirestore;
-</script>
+            const percentage = ((surveys / calls) * 100).toFixed(2);
+            await addEntryToFirestore(date, calls, surveys, percentage);
 
-</head>
-<body>
-
-<h2>📊 Daily Calls & EOC Tracker</h2>
-
-<form id="dataForm">
-  <table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Total Calls</th>
-        <th>EOC Received</th>
-        <th>% EOC</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><input type="date" name="date1" /></td>
-        <td><input type="number" name="calls1" min="0" oninput="updateTable()" /></td>
-        <td><input type="number" name="eoc1" min="0" oninput="updateTable()" /></td>
-        <td><span id="percent1">0%</span></td>
-      </tr>
-      <tr>
-        <td><input type="date" name="date2" /></td>
-        <td><input type="number" name="calls2" min="0" oninput="updateTable()" /></td>
-        <td><input type="number" name="eoc2" min="0" oninput="updateTable()" /></td>
-        <td><span id="percent2">0%</span></td>
-      </tr>
-      <tr>
-        <td><input type="date" name="date3" /></td>
-        <td><input type="number" name="calls3" min="0" oninput="updateTable()" /></td>
-        <td><input type="number" name="eoc3" min="0" oninput="updateTable()" /></td>
-        <td><span id="percent3">0%</span></td>
-      </tr>
-    </tbody>
-  </table>
-
-  <div class="totals">
-    📞 Total Calls: <span id="totalCalls">0</span><br />
-    📨 Total EOC: <span id="totalEOC">0</span><br />
-    📈 Overall EOC %: <span id="overallPercent">0%</span>
-  </div>
-
-  <div class="button-container">
-    <button type="button" onclick="submitForm()">✅ Submit</button>
-    <button type="button" onclick="resetForm()">🗑️ Remove All</button>
-  </div>
-</form>
-
-<script>
-  const INPUT_COUNT = 3;
-
-  function updateTable() {
-    let totalCalls = 0;
-    let totalEOC = 0;
-
-    for (let i = 1; i <= INPUT_COUNT; i++) {
-      const calls = parseInt(document.querySelector(`[name="calls${i}"]`).value) || 0;
-      const eoc = parseInt(document.querySelector(`[name="eoc${i}"]`).value) || 0;
-      const percent = calls > 0 ? (eoc / calls) * 100 : 0;
-      document.getElementById(`percent${i}`).innerText = percent.toFixed(2) + "%";
-      totalCalls += calls;
-      totalEOC += eoc;
-    }
-
-    const overallPercent = totalCalls > 0 ? (totalEOC / totalCalls) * 100 : 0;
-    document.getElementById("totalCalls").innerText = totalCalls;
-    document.getElementById("totalEOC").innerText = totalEOC;
-    document.getElementById("overallPercent").innerText = overallPercent.toFixed(2) + "%";
-  }
-
-  function saveLocalData() {
-    const localData = [];
-    for (let i = 1; i <= INPUT_COUNT; i++) {
-      localData.push({
-        date: document.querySelector(`[name="date${i}"]`).value,
-        calls: document.querySelector(`[name="calls${i}"]`).value,
-        eoc: document.querySelector(`[name="eoc${i}"]`).value
-      });
-    }
-    localStorage.setItem('callData', JSON.stringify(localData));
-  }
-
-  function loadLocalData() {
-    const saved = JSON.parse(localStorage.getItem('callData'));
-    if (saved) {
-      for (let i = 1; i <= INPUT_COUNT; i++) {
-        document.querySelector(`[name="date${i}"]`).value = saved[i - 1].date || "";
-        document.querySelector(`[name="calls${i}"]`).value = saved[i - 1].calls || "";
-        document.querySelector(`[name="eoc${i}"]`).value = saved[i - 1].eoc || "";
-      }
-      updateTable();
-    }
-  }
-
-  function submitForm() {
-    const data = [];
-    for (let i = 1; i <= INPUT_COUNT; i++) {
-      const date = document.querySelector(`[name="date${i}"]`).value;
-      const calls = parseInt(document.querySelector(`[name="calls${i}"]`).value) || 0;
-      const eoc = parseInt(document.querySelector(`[name="eoc${i}"]`).value) || 0;
-
-      if (date) {
-        data.push({ date, calls, eoc });
-      }
-    }
-
-    if (data.length > 0) {
-      saveToFirebase(data);
-      alert("✅ Data submitted to Firebase!");
-    } else {
-      alert("⚠️ Please enter at least one valid row with a date.");
-    }
-  }
-
-  function resetForm() {
-    for (let i = 1; i <= INPUT_COUNT; i++) {
-      document.querySelector(`[name="date${i}"]`).value = "";
-      document.querySelector(`[name="calls${i}"]`).value = "";
-      document.querySelector(`[name="eoc${i}"]`).value = "";
-      document.getElementById(`percent${i}`).innerText = "0%";
-    }
-    document.getElementById("totalCalls").innerText = "0";
-    document.getElementById("totalEOC").innerText = "0";
-    document.getElementById("overallPercent").innerText = "0%";
-    localStorage.removeItem('callData');
-  }
-
-  // Attach listeners to inputs to update localStorage automatically
-  window.addEventListener('DOMContentLoaded', () => {
-    loadLocalData();
-    for (let i = 1; i <= INPUT_COUNT; i++) {
-      ['date', 'calls', 'eoc'].forEach(field => {
-        const input = document.querySelector(`[name="${field}${i}"]`);
-        input.addEventListener('input', () => {
-          updateTable();
-          saveLocalData();
+            // Clear the form fields
+            document.getElementById("trackerForm").reset();
         });
-      });
-    }
-  });
-</script>
+    </script>
 
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #e0f7fa;
+            color: #033e6b;
+            padding: 20px;
+        }
 
+        h1 {
+            text-align: center;
+            color: #026873;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #a7d3dc;
+        }
+
+        th {
+            background-color: #4db6ac;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #e0f2f1;
+        }
+
+        .form-row input[type="number"],
+        .form-row input[type="date"] {
+            width: 90%;
+            padding: 6px;
+            border: 1px solid #b2ebf2;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #0288d1;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #0277bd;
+        }
+
+        tfoot {
+            font-weight: bold;
+            background-color: #b2dfdb;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Daily Calls/EOC Tracker</h1>
+
+    <table id="trackerTable">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Number of Calls</th>
+                <th>Number of Surveys (EOC)</th>
+                <th>Percentage (%)</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- Firebase data will be inserted here -->
+        </tbody>
+        <tfoot>
+            <tr>
+                <td>Total</td>
+                <td id="totalCalls">0</td>
+                <td id="totalSurveys">0</td>
+                <td id="totalPercentage">0%</td>
+                <td></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <form id="trackerForm" class="form-row" style="margin-top: 20px;">
+        <input type="date" id="dateInput" required>
+        <input type="number" id="callsInput" placeholder="Number of Calls" required>
+        <input type="number" id="surveysInput" placeholder="Number of Surveys" required>
+        <button type="submit">Submit</button>
+        <button type="button" onclick="removeAll()">Remove All</button>
+    </form>
 </body>
+
 </html>
