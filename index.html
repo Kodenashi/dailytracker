@@ -5,76 +5,59 @@
     <meta charset="UTF-8">
     <title>Daily Calls/EOC Tracker</title>
     <script type="module">
-        // Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
         import {
-            initializeApp
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import {
-            getFirestore,
-            collection,
-            addDoc,
-            getDocs,
-            deleteDoc,
-            doc
+            getFirestore, collection, addDoc, getDocs, deleteDoc, doc
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        import {
-            getAnalytics
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
-        // Your Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyC1tFG-E4XrGCDms5cdfyBtuo5s8D-d7og",
             authDomain: "dailytracker-f9522.firebaseapp.com",
             projectId: "dailytracker-f9522",
-            storageBucket: "dailytracker-f9522.firebasestorage.app",
+            storageBucket: "dailytracker-f9522.appspot.com",
             messagingSenderId: "715369191108",
             appId: "1:715369191108:web:3201329bfaddf4dd3e1b91",
             measurementId: "G-S27WN4XM5K"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const db = getFirestore(app);
         const entriesRef = collection(db, "call_tracker");
 
-        // Load existing entries from Firestore
         async function loadEntries() {
             const snapshot = await getDocs(entriesRef);
             snapshot.forEach(docSnap => {
                 const data = docSnap.data();
-                addRowToTable(docSnap.id, data.date, data.calls, data.surveys, data.percentage);
+                addRowToTable(docSnap.id, data.date, data.calls, data.surveys, data.percentage, data.revenue || 0);
             });
             updateTotals();
         }
 
-        // Add entry to Firestore and table
-        async function addEntryToFirestore(date, calls, surveys, percentage) {
+        async function addEntryToFirestore(date, calls, surveys, percentage, revenue) {
             const docRef = await addDoc(entriesRef, {
                 date,
                 calls,
                 surveys,
-                percentage
+                percentage,
+                revenue
             });
-            addRowToTable(docRef.id, date, calls, surveys, percentage);
+            addRowToTable(docRef.id, date, calls, surveys, percentage, revenue);
             updateTotals();
         }
 
-        // Delete one entry
         async function deleteEntryFromFirestore(id, rowElement) {
             await deleteDoc(doc(entriesRef, id));
             rowElement.remove();
             updateTotals();
         }
 
-        // Load entries on page load
-        window.addEventListener("DOMContentLoaded", loadEntries);
-
-        // Global functions
-        window.addEntry = async function() {
+        window.addEntry = async function () {
             const date = document.getElementById("dateInput").value;
             const calls = parseInt(document.getElementById("callsInput").value);
             const surveys = parseInt(document.getElementById("surveysInput").value);
+            const revenue = parseFloat(document.getElementById("revenueInput").value) || 0;
 
             if (!date || isNaN(calls) || isNaN(surveys)) {
                 alert("Please enter all fields correctly.");
@@ -82,20 +65,18 @@
             }
 
             const percentage = ((surveys / calls) * 100).toFixed(2);
-            await addEntryToFirestore(date, calls, surveys, percentage);
+            await addEntryToFirestore(date, calls, surveys, percentage, revenue);
 
-            document.getElementById("dateInput").value = "";
-            document.getElementById("callsInput").value = "";
-            document.getElementById("surveysInput").value = "";
+            document.getElementById("trackerForm").reset();
         };
 
-        window.deleteRow = async function(button) {
+        window.deleteRow = async function (button) {
             const row = button.closest("tr");
             const entryId = row.dataset.id;
             await deleteEntryFromFirestore(entryId, row);
         };
 
-        window.removeAll = async function() {
+        window.removeAll = async function () {
             if (!confirm("Are you sure you want to remove all entries?")) return;
 
             const snapshot = await getDocs(entriesRef);
@@ -106,56 +87,52 @@
             updateTotals();
         };
 
-        function addRowToTable(id, date, calls, surveys, percentage) {
+        function addRowToTable(id, date, calls, surveys, percentage, revenue) {
             const tableBody = document.getElementById("tableBody");
             const row = document.createElement("tr");
             row.dataset.id = id;
             row.innerHTML = `
-        <td>${date}</td>
-        <td>${calls}</td>
-        <td>${surveys}</td>
-        <td>${percentage}%</td>
-        <td><button onclick="deleteRow(this)">Delete</button></td>
-      `;
+                <td>${date}</td>
+                <td>${calls}</td>
+                <td>${surveys}</td>
+                <td>${percentage}%</td>
+                <td>$${revenue.toFixed(2)}</td>
+                <td><button onclick="deleteRow(this)">Delete</button></td>
+            `;
             tableBody.appendChild(row);
         }
 
         function updateTotals() {
             const rows = document.querySelectorAll("#tableBody tr");
             let totalCalls = 0,
-                totalSurveys = 0;
+                totalSurveys = 0,
+                totalRevenue = 0;
 
             rows.forEach(row => {
                 const calls = parseInt(row.cells[1].textContent) || 0;
                 const surveys = parseInt(row.cells[2].textContent) || 0;
+                const revenue = parseFloat(row.cells[4].textContent.replace('$', '')) || 0;
+
                 totalCalls += calls;
                 totalSurveys += surveys;
+                totalRevenue += revenue;
             });
+
+            const totalPercentage = totalCalls ? ((totalSurveys / totalCalls) * 100).toFixed(2) : "0.00";
+            const revenuePerCall = totalCalls ? (totalRevenue / totalCalls).toFixed(2) : "0.00";
 
             document.getElementById("totalCalls").textContent = totalCalls;
             document.getElementById("totalSurveys").textContent = totalSurveys;
-            document.getElementById("totalPercentage").textContent =
-                totalCalls ? ((totalSurveys / totalCalls) * 100).toFixed(2) + "%" : "0%";
+            document.getElementById("totalPercentage").textContent = totalPercentage + "%";
+            document.getElementById("totalRevenuePerCall").textContent = `$${revenuePerCall}`;
         }
-        // Attach form submission handler
-        document.getElementById("trackerForm").addEventListener("submit", async function(e) {
-            e.preventDefault(); // prevent actual form submission
 
-            const date = document.getElementById("dateInput").value;
-            const calls = parseInt(document.getElementById("callsInput").value);
-            const surveys = parseInt(document.getElementById("surveysInput").value);
-
-            if (!date || isNaN(calls) || isNaN(surveys)) {
-                alert("Please enter all fields correctly.");
-                return;
-            }
-
-            const percentage = ((surveys / calls) * 100).toFixed(2);
-            await addEntryToFirestore(date, calls, surveys, percentage);
-
-            // Clear the form fields
-            document.getElementById("trackerForm").reset();
+        document.getElementById("trackerForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+            window.addEntry();
         });
+
+        window.addEventListener("DOMContentLoaded", loadEntries);
     </script>
 
     <style>
@@ -201,8 +178,9 @@
             padding: 4px;
             border: 1px solid #b2ebf2;
             border-radius: 4px;
-            font-size: 14px; 
+            font-size: 14px;
         }
+
         button {
             background-color: #0288d1;
             color: white;
@@ -235,11 +213,12 @@
                 <th>Number of Calls</th>
                 <th>Number of Surveys (EOC)</th>
                 <th>Percentage (%)</th>
+                <th>Revenue</th>
                 <th>Action</th>
             </tr>
         </thead>
         <tbody id="tableBody">
-            <!-- Firebase data will be inserted here -->
+            <!-- Data rows -->
         </tbody>
         <tfoot>
             <tr>
@@ -247,6 +226,7 @@
                 <td id="totalCalls">0</td>
                 <td id="totalSurveys">0</td>
                 <td id="totalPercentage">0%</td>
+                <td id="totalRevenuePerCall">$0.00</td>
                 <td></td>
             </tr>
         </tfoot>
@@ -256,6 +236,7 @@
         <input type="date" id="dateInput" required>
         <input type="number" id="callsInput" placeholder="Number of Calls" required>
         <input type="number" id="surveysInput" placeholder="Number of Surveys" required>
+        <input type="number" id="revenueInput" step="0.01" placeholder="Revenue (optional)">
         <button type="submit">Submit</button>
         <button type="button" onclick="removeAll()">Remove All</button>
     </form>
