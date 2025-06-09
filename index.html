@@ -42,20 +42,21 @@
             const snapshot = await getDocs(entriesRef);
             snapshot.forEach(docSnap => {
                 const data = docSnap.data();
-                addRowToTable(docSnap.id, data.date, data.calls, data.surveys, data.percentage, data.revenue || 0);
+                addRowToTable(docSnap.id, data.date, data.calls, data.surveys, data.percentage, data.surveyScore, data.revenue || 0);
             });
             updateTotals();
         }
 
-        async function addEntryToFirestore(date, calls, surveys, percentage, revenue) {
+        async function addEntryToFirestore(date, calls, surveys, percentage, surveyScore, revenue) {
             const docRef = await addDoc(entriesRef, {
                 date,
                 calls,
                 surveys,
                 percentage,
+                surveyScore,
                 revenue
             });
-            addRowToTable(docRef.id, date, calls, surveys, percentage, revenue);
+            addRowToTable(docRef.id, date, calls, surveys, percentage, surveyScore, revenue);
             updateTotals();
         }
 
@@ -69,16 +70,19 @@
             const date = document.getElementById("dateInput").value;
             const calls = parseInt(document.getElementById("callsInput").value);
             const surveys = parseInt(document.getElementById("surveysInput").value);
+            const surveyTotal = parseInt(document.getElementById("surveyTotalInput").value);
             const revenue = parseFloat(document.getElementById("revenueInput").value) || 0;
 
-            if (!date || isNaN(calls) || isNaN(surveys)) {
+            if (!date || isNaN(calls) || isNaN(surveys) || isNaN(surveyTotal)) {
                 alert("Please enter all fields correctly.");
                 return;
             }
 
             const percentage = ((surveys / calls) * 100).toFixed(2);
-            await addEntryToFirestore(date, calls, surveys, percentage, revenue);
+            const perfectScore = surveys * 5;
+            const surveyScore = perfectScore > 0 ? ((surveyTotal / perfectScore) * 100).toFixed(2) : "0.00";
 
+            await addEntryToFirestore(date, calls, surveys, percentage, surveyScore, revenue);
             document.getElementById("trackerForm").reset();
         };
 
@@ -99,18 +103,19 @@
             updateTotals();
         };
 
-        function addRowToTable(id, date, calls, surveys, percentage, revenue) {
+        function addRowToTable(id, date, calls, surveys, percentage, surveyScore, revenue) {
             const tableBody = document.getElementById("tableBody");
             const row = document.createElement("tr");
             row.dataset.id = id;
             row.innerHTML = `
-                <td>${date}</td>
-                <td>${calls}</td>
-                <td>${surveys}</td>
-                <td>${percentage}%</td>
-                <td>$${revenue.toFixed(2)}</td>
-                <td><button onclick="deleteRow(this)">Delete</button></td>
-            `;
+        <td>${date}</td>
+        <td>${calls}</td>
+        <td>${surveys}</td>
+        <td>${percentage}%</td>
+        <td>${surveyScore}%</td>
+        <td>$${revenue.toFixed(2)}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
             tableBody.appendChild(row);
         }
 
@@ -119,24 +124,40 @@
             let totalCalls = 0,
                 totalSurveys = 0,
                 totalRevenue = 0;
+            let totalSurveyScore = 0,
+                scoreCount = 0;
 
             rows.forEach(row => {
                 const calls = parseInt(row.cells[1].textContent) || 0;
                 const surveys = parseInt(row.cells[2].textContent) || 0;
-                const revenue = parseFloat(row.cells[4].textContent.replace('$', '')) || 0;
+                const surveyScore = parseFloat(row.cells[4].textContent.replace('%', '')) || 0;
+                const revenue = parseFloat(row.cells[5].textContent.replace('$', '')) || 0;
 
                 totalCalls += calls;
                 totalSurveys += surveys;
                 totalRevenue += revenue;
+
+                if (!isNaN(surveyScore)) {
+                    totalSurveyScore += surveyScore;
+                    scoreCount++;
+                }
             });
 
             const totalPercentage = totalCalls ? ((totalSurveys / totalCalls) * 100).toFixed(2) : "0.00";
+            const averageSurveyScore = scoreCount ? (totalSurveyScore / scoreCount).toFixed(2) : "0.00";
             const revenuePerCall = totalCalls ? (totalRevenue / totalCalls).toFixed(2) : "0.00";
 
             document.getElementById("totalCalls").textContent = totalCalls;
             document.getElementById("totalSurveys").textContent = totalSurveys;
-            document.getElementById("totalPercentage").textContent = totalPercentage + "%";
-            document.getElementById("totalRevenuePerCall").textContent = `$${revenuePerCall}`;
+            document.getElementById("totalPercentage").textContent = $ {
+                totalPercentage
+            } % ;
+            document.getElementById("averageSurveyScore").textContent = $ {
+                averageSurveyScore
+            } % ;
+            document.getElementById("totalRevenuePerCall").textContent = $$ {
+                revenuePerCall
+            };
         }
 
         document.getElementById("trackerForm").addEventListener("submit", function(e) {
@@ -184,7 +205,7 @@
             text-align: center;
             border-bottom: 1px solid #e0f2f1;
             font-size: 13px;
-            font-family:Comic Sans MS;
+            font-family: Comic Sans MS;
         }
 
         th {
@@ -265,8 +286,6 @@
             }
         }
     </style>
-
-
 </head>
 
 <body>
@@ -280,12 +299,13 @@
                     <th>Number of Calls</th>
                     <th>Number of Surveys (EOC)</th>
                     <th>Percentage (%)</th>
+                    <th>Survey Score (%)</th>
                     <th>Revenue</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody id="tableBody">
-                <!-- Data rows -->
+                <!-- Entries will be loaded here -->
             </tbody>
             <tfoot>
                 <tr>
@@ -293,6 +313,7 @@
                     <td id="totalCalls">0</td>
                     <td id="totalSurveys">0</td>
                     <td id="totalPercentage">0%</td>
+                    <td id="averageSurveyScore">0%</td>
                     <td id="totalRevenuePerCall">$0.00</td>
                     <td></td>
                 </tr>
@@ -303,6 +324,7 @@
             <input type="date" id="dateInput" required>
             <input type="number" id="callsInput" placeholder="Number of Calls" required>
             <input type="number" id="surveysInput" placeholder="Number of Surveys" required>
+            <input type="number" id="surveyTotalInput" placeholder="Total Survey Score (1-5 each)" required>
             <input type="number" id="revenueInput" step="0.01" placeholder="Revenue (optional)">
             <button type="submit">Submit</button>
             <button type="button" onclick="removeAll()">Remove All</button>
