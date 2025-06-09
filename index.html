@@ -181,9 +181,6 @@
 
         window.addEventListener("DOMContentLoaded", loadEntries);
     </script>
-
-    </script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pirata+One&display=swap');
 
@@ -193,35 +190,34 @@
             font-family: 'Pirata One', cursive;
             background: url('https://images2.alphacoders.com/136/1365116.jpeg') no-repeat center center fixed;
             background-size: cover;
-            color: #2d1500;
+            color: #3e1e00;
         }
 
         .container {
             max-width: 1100px;
-            margin: 50px auto;
+            margin: 60px auto;
             padding: 30px;
-            background: rgba(255, 248, 220, 0.6);
-            /* More transparent parchment */
-            border: 4px solid rgba(139, 69, 19, 0.8);
-            border-radius: 20px;
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            background: rgba(255, 248, 220, 0.7);
+            /* Parchment tone with transparency */
+            border: 4px solid rgba(139, 69, 19, 0.85);
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
         }
 
         h1 {
             text-align: center;
-            font-size: 60px;
+            font-size: 58px;
             color: #c62828;
-            text-shadow: 3px 3px 0 #000;
+            text-shadow: 3px 3px 2px #000;
             margin-bottom: 30px;
+            letter-spacing: 2px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            background-color: rgba(255, 255, 255, 0.5);
-            /* Semi-transparent */
-            border: 2px solid rgba(93, 64, 55, 0.7);
-            border-radius: 8px;
+            background-color: rgba(255, 255, 240, 0.5);
+            border-radius: 12px;
             overflow: hidden;
             font-family: 'Comic Sans MS', cursive;
         }
@@ -230,25 +226,24 @@
         td {
             padding: 12px;
             text-align: center;
-            border-bottom: 1px solid rgba(210, 180, 140, 0.5);
+            border-bottom: 1px solid rgba(160, 82, 45, 0.4);
             font-size: 14px;
-            background-color: rgba(255, 255, 255, 0.3);
-            /* Slight transparency */
+            background-color: rgba(255, 255, 255, 0.35);
         }
 
         th {
-            background-color: rgba(249, 168, 37, 0.6);
-            color: #000;
+            background-color: rgba(210, 105, 30, 0.6);
+            color: #fffdf2;
             font-size: 15px;
             letter-spacing: 1px;
         }
 
         tr:nth-child(even) td {
-            background-color: rgba(255, 255, 255, 0.25);
+            background-color: rgba(255, 255, 255, 0.2);
         }
 
         tfoot td {
-            background-color: rgba(255, 224, 130, 0.5);
+            background-color: rgba(255, 224, 130, 0.6);
             font-weight: bold;
             font-size: 14px;
         }
@@ -256,9 +251,9 @@
         .form-row {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 12px;
             justify-content: center;
-            margin-top: 30px;
+            margin-top: 25px;
         }
 
         .form-row input[type="number"],
@@ -267,22 +262,22 @@
             font-size: 14px;
             width: 180px;
             border-radius: 10px;
-            border: 2px solid rgba(139, 94, 60, 0.6);
-            background: rgba(255, 255, 240, 0.6);
+            border: 2px solid rgba(160, 82, 45, 0.6);
+            background: rgba(255, 255, 240, 0.75);
             color: #3e2723;
             font-family: 'Comic Sans MS', cursive;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-            transition: 0.3s;
+            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+            transition: 0.3s ease;
         }
 
         .form-row input:focus {
             outline: none;
-            border-color: #f57f17;
-            background-color: rgba(255, 243, 205, 0.8);
+            border-color: #ff9800;
+            background-color: rgba(255, 250, 205, 0.9);
         }
 
         button {
-            background-color: #d84315;
+            background-color: #b71c1c;
             color: white;
             border: none;
             padding: 10px 18px;
@@ -291,11 +286,11 @@
             border-radius: 10px;
             cursor: pointer;
             transition: background 0.3s, transform 0.2s;
-            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3);
+            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4);
         }
 
         button:hover {
-            background-color: #bf360c;
+            background-color: #880e0e;
             transform: scale(1.05);
         }
 
@@ -314,8 +309,14 @@
             td {
                 font-size: 12px;
             }
+
+            h1 {
+                font-size: 42px;
+            }
         }
     </style>
+
+
 
 
 </head>
