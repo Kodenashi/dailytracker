@@ -40,10 +40,34 @@
 
         async function loadEntries() {
             const snapshot = await getDocs(entriesRef);
+            const entries = [];
+
             snapshot.forEach(docSnap => {
                 const data = docSnap.data();
-                addRowToTable(docSnap.id, data.date, data.calls, data.surveys, data.percentage, data.surveyScore, data.revenue || 0);
+                entries.push({
+                    id: docSnap.id,
+                    ...data
+                });
             });
+
+            // Sort by date (ascending)
+            entries.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // Clear table before re-adding
+            document.getElementById("tableBody").innerHTML = "";
+
+            entries.forEach(entry => {
+                addRowToTable(
+                    entry.id,
+                    entry.date,
+                    entry.calls,
+                    entry.surveys,
+                    entry.percentage,
+                    entry.surveyScore,
+                    entry.revenue || 0
+                );
+            });
+
             updateTotals();
         }
 
@@ -56,13 +80,8 @@
                 surveyScore,
                 revenue
             });
-            addRowToTable(docRef.id, date, calls, surveys, percentage, surveyScore, revenue);
-            updateTotals();
-        }
 
-        async function deleteEntryFromFirestore(id, rowElement) {
-            await deleteDoc(doc(entriesRef, id));
-            rowElement.remove();
+            addRowToTable(docRef.id, date, calls, surveys, percentage, surveyScore, revenue);
             updateTotals();
         }
 
@@ -84,12 +103,15 @@
 
             await addEntryToFirestore(date, calls, surveys, percentage, surveyScore, revenue);
             document.getElementById("trackerForm").reset();
+            await loadEntries(); // reload with sorted data
         };
 
         window.deleteRow = async function(button) {
             const row = button.closest("tr");
             const entryId = row.dataset.id;
-            await deleteEntryFromFirestore(entryId, row);
+            await deleteDoc(doc(db, "call_tracker", entryId));
+            row.remove();
+            updateTotals();
         };
 
         window.removeAll = async function() {
@@ -108,14 +130,14 @@
             const row = document.createElement("tr");
             row.dataset.id = id;
             row.innerHTML = `
-        <td>${date}</td>
-        <td>${calls}</td>
-        <td>${surveys}</td>
-        <td>${percentage}%</td>
-        <td>${surveyScore}%</td>
-        <td>$${revenue.toFixed(2)}</td>
-        <td><button onclick="deleteRow(this)">Delete</button></td>
-      `;
+            <td>${date}</td>
+            <td>${calls}</td>
+            <td>${surveys}</td>
+            <td>${percentage}%</td>
+            <td>${surveyScore}%</td>
+            <td>$${parseFloat(revenue).toFixed(2)}</td>
+            <td><button onclick="deleteRow(this)">Delete</button></td>
+        `;
             tableBody.appendChild(row);
         }
 
@@ -149,15 +171,9 @@
 
             document.getElementById("totalCalls").textContent = totalCalls;
             document.getElementById("totalSurveys").textContent = totalSurveys;
-            document.getElementById("totalPercentage").textContent = $ {
-                totalPercentage
-            } % ;
-            document.getElementById("averageSurveyScore").textContent = $ {
-                averageSurveyScore
-            } % ;
-            document.getElementById("totalRevenuePerCall").textContent = $$ {
-                revenuePerCall
-            };
+            document.getElementById("totalPercentage").textContent = `${totalPercentage}%`;
+            document.getElementById("averageSurveyScore").textContent = `${averageSurveyScore}%`;
+            document.getElementById("totalRevenuePerCall").textContent = `$${revenuePerCall}`;
         }
 
         document.getElementById("trackerForm").addEventListener("submit", function(e) {
@@ -166,6 +182,8 @@
         });
 
         window.addEventListener("DOMContentLoaded", loadEntries);
+    </script>
+
     </script>
 
     <style>
