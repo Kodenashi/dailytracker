@@ -2,11 +2,13 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Daily Calls/EOC Tracker</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap" rel="stylesheet">
+
+    <!-- Firebase SDK -->
     <script type="module">
         import {
             initializeApp
@@ -19,6 +21,9 @@
             deleteDoc,
             doc
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import {
+            getAnalytics
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyC1tFG-E4XrGCDms5cdfyBtuo5s8D-d7og",
@@ -31,6 +36,7 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
         const db = getFirestore(app);
         const entriesRef = collection(db, "call_tracker");
 
@@ -48,17 +54,11 @@
 
             entries.sort((a, b) => new Date(a.date) - new Date(b.date));
             document.getElementById("tableBody").innerHTML = "";
+
             entries.forEach(entry => {
-                addRowToTable(
-                    entry.id,
-                    entry.date,
-                    entry.calls,
-                    entry.surveys,
-                    entry.percentage,
-                    entry.surveyScore,
-                    entry.revenue || 0
-                );
+                addRowToTable(entry.id, entry.date, entry.calls, entry.surveys, entry.percentage, entry.surveyScore, entry.revenue || 0);
             });
+
             updateTotals();
         }
 
@@ -71,7 +71,6 @@
                 surveyScore,
                 revenue
             });
-
             addRowToTable(docRef.id, date, calls, surveys, percentage, surveyScore, revenue);
             updateTotals();
         }
@@ -173,6 +172,19 @@
         window.addEventListener("DOMContentLoaded", loadEntries);
     </script>
 
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        function exportToExcel() {
+            const table = document.getElementById("trackerTable");
+            const wb = XLSX.utils.table_to_book(table, {
+                sheet: "Call Tracker"
+            });
+            XLSX.writeFile(wb, "Daily_Call_EOC_Tracker.xlsx");
+        }
+    </script>
+
+    <!-- Styles -->
     <style>
         body {
             margin: 0;
@@ -196,9 +208,10 @@
         h1 {
             text-align: center;
             font-size: 48px;
+            font-family: 'Rubik', sans-serif;
             color: #4e3d2a;
-            font-weight: 600;
             margin-bottom: 30px;
+            font-weight: 600;
             letter-spacing: 1px;
         }
 
@@ -208,6 +221,7 @@
             background-color: rgba(253, 250, 245, 0.85);
             border-radius: 10px;
             overflow: hidden;
+            font-family: 'Rubik', sans-serif;
         }
 
         th,
@@ -216,6 +230,7 @@
             text-align: center;
             border-bottom: 1px solid #dcd0c0;
             font-size: 14px;
+            color: #333;
         }
 
         th {
@@ -241,7 +256,8 @@
             margin-top: 25px;
         }
 
-        .form-row input {
+        .form-row input[type="number"],
+        .form-row input[type="date"] {
             padding: 10px;
             font-size: 14px;
             width: 180px;
@@ -250,7 +266,6 @@
             background: #fdfaf6;
             color: #4e3d2a;
             box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-            transition: 0.3s ease;
         }
 
         .form-row input:focus {
@@ -265,6 +280,7 @@
             border: none;
             padding: 10px 20px;
             font-size: 14px;
+            font-family: 'Rubik', sans-serif;
             font-weight: 600;
             border-radius: 8px;
             cursor: pointer;
@@ -303,6 +319,7 @@
 <body>
     <div class="container">
         <h1>Daily Calls/EOC Tracker</h1>
+
         <table id="trackerTable">
             <thead>
                 <tr>
@@ -329,7 +346,7 @@
             </tfoot>
         </table>
 
-        <form id="trackerForm" class="form-row">
+        <form id="trackerForm" class="form-row" style="margin-top: 20px;">
             <input type="date" id="dateInput" required>
             <input type="number" id="callsInput" placeholder="Number of Calls" required>
             <input type="number" id="surveysInput" placeholder="Number of Surveys" required>
@@ -337,6 +354,7 @@
             <input type="number" id="revenueInput" step="0.01" placeholder="Revenue (optional)">
             <button type="submit">Submit</button>
             <button type="button" onclick="removeAll()">Remove All</button>
+            <button type="button" onclick="exportToExcel()">Export to Excel</button>
         </form>
     </div>
 </body>
