@@ -6,10 +6,7 @@
     <title>Daily Calls/EOC Tracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Rubik+Doodle+Shadow&display=swap" rel="stylesheet">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Honk&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600&display=swap" rel="stylesheet">
     <script type="module">
         import {
             initializeApp
@@ -22,9 +19,6 @@
             deleteDoc,
             doc
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        import {
-            getAnalytics
-        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyC1tFG-E4XrGCDms5cdfyBtuo5s8D-d7og",
@@ -37,7 +31,6 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
         const db = getFirestore(app);
         const entriesRef = collection(db, "call_tracker");
 
@@ -54,9 +47,7 @@
             });
 
             entries.sort((a, b) => new Date(a.date) - new Date(b.date));
-
             document.getElementById("tableBody").innerHTML = "";
-
             entries.forEach(entry => {
                 addRowToTable(
                     entry.id,
@@ -68,7 +59,6 @@
                     entry.revenue || 0
                 );
             });
-
             updateTotals();
         }
 
@@ -117,11 +107,9 @@
 
         window.removeAll = async function() {
             if (!confirm("Are you sure you want to remove all entries?")) return;
-
             const snapshot = await getDocs(entriesRef);
             const deletes = snapshot.docs.map(docSnap => deleteDoc(docSnap.ref));
             await Promise.all(deletes);
-
             document.getElementById("tableBody").innerHTML = "";
             updateTotals();
         };
@@ -131,14 +119,14 @@
             const row = document.createElement("tr");
             row.dataset.id = id;
             row.innerHTML = `
-            <td>${date}</td>
-            <td>${calls}</td>
-            <td>${surveys}</td>
-            <td>${percentage}%</td>
-            <td>${surveyScore}%</td>
-            <td>$${parseFloat(revenue).toFixed(2)}</td>
-            <td><button onclick="deleteRow(this)">Delete</button></td>
-        `;
+        <td>${date}</td>
+        <td>${calls}</td>
+        <td>${surveys}</td>
+        <td>${percentage}%</td>
+        <td>${surveyScore}%</td>
+        <td>$${parseFloat(revenue).toFixed(2)}</td>
+        <td><button onclick="deleteRow(this)">Delete</button></td>
+      `;
             tableBody.appendChild(row);
         }
 
@@ -184,71 +172,65 @@
 
         window.addEventListener("DOMContentLoaded", loadEntries);
     </script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Pirata+One&display=swap');
 
+    <style>
         body {
             margin: 0;
             padding: 0;
-            font-family: 'Pirata One', cursive;
+            font-family: 'Rubik', sans-serif;
             background: url('https://i.imgur.com/PZ81D6Y.jpeg') no-repeat center center fixed;
             background-size: cover;
-            color: #3e1e00;
+            color: #2e2e2e;
         }
 
         .container {
             max-width: 1100px;
             margin: 60px auto;
             padding: 30px;
-            background: rgba(255, 248, 220, 0.7);
-            border: 4px solid rgba(139, 69, 19, 0.85);
-            border-radius: 15px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            background: rgba(255, 255, 245, 0.85);
+            border: 1px solid #bda893;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         }
 
         h1 {
             text-align: center;
-            font-size: 70px;
-            font-family: Honk;
-            color: #c62828;
-            text-shadow: 3px 3px 2px #000;
+            font-size: 48px;
+            color: #4e3d2a;
+            font-weight: 600;
             margin-bottom: 30px;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            background-color: rgba(255, 255, 240, 0.5);
-            border-radius: 12px;
+            background-color: rgba(253, 250, 245, 0.85);
+            border-radius: 10px;
             overflow: hidden;
-            font-family: 'Comic Sans MS', cursive;
         }
 
         th,
         td {
             padding: 12px;
             text-align: center;
-            border-bottom: 1px solid rgba(160, 82, 45, 0.4);
+            border-bottom: 1px solid #dcd0c0;
             font-size: 14px;
-            background-color: rgba(255, 255, 255, 0.35);
         }
 
         th {
-            background-color: rgba(210, 105, 30, 0.6);
-            color: #fffdf2;
-            font-size: 15px;
-            letter-spacing: 1px;
+            background-color: #d6cfc2;
+            color: #3f3f3f;
+            font-weight: 600;
         }
 
         tr:nth-child(even) td {
-            background-color: rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.4);
         }
 
         tfoot td {
-            background-color: rgba(255, 224, 130, 0.6);
+            background-color: #ede4d1;
             font-weight: bold;
-            font-size: 14px;
         }
 
         .form-row {
@@ -259,47 +241,44 @@
             margin-top: 25px;
         }
 
-        .form-row input[type="number"],
-        .form-row input[type="date"] {
+        .form-row input {
             padding: 10px;
             font-size: 14px;
             width: 180px;
-            border-radius: 10px;
-            border: 2px solid rgba(160, 82, 45, 0.6);
-            background: rgba(255, 255, 240, 0.75);
-            color: #3e2723;
-            font-family: 'Comic Sans MS', cursive;
-            box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            border: 1px solid #d4c1ae;
+            background: #fdfaf6;
+            color: #4e3d2a;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
             transition: 0.3s ease;
         }
 
         .form-row input:focus {
             outline: none;
-            border-color: #ff9800;
-            background-color: rgba(255, 250, 205, 0.9);
+            border-color: #a39e8e;
+            background-color: #fffdfa;
         }
 
         button {
-            background: linear-gradient(to bottom, #ff9800, #d84315);
-            color: #fff8e1;
-            border: 2px solid #6d4c41;
-            padding: 10px 18px;
+            background: #a39e8e;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
             font-size: 14px;
-            font-family: "ZCOOL XiaoWei", sans-serif;
-            font-weight: bold;
-            border-radius: 10px;
+            font-weight: 600;
+            border-radius: 8px;
             cursor: pointer;
-            transition: 0.3s;
-            box-shadow: 2px 2px 8px #000;
+            transition: background 0.3s, transform 0.2s;
+            box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.15);
         }
 
         button:hover {
-            background: linear-gradient(to bottom, #f57c00, #bf360c);
+            background: #867f73;
             transform: scale(1.05);
         }
 
         button:active {
-            transform: scale(0.95);
+            transform: scale(0.97);
         }
 
         @media (max-width: 768px) {
@@ -315,20 +294,15 @@
             }
 
             h1 {
-                font-size: 42px;
+                font-size: 36px;
             }
         }
     </style>
-
-
-
-
 </head>
 
 <body>
     <div class="container">
         <h1>Daily Calls/EOC Tracker</h1>
-
         <table id="trackerTable">
             <thead>
                 <tr>
@@ -341,10 +315,7 @@
                     <th>Action</th>
                 </tr>
             </thead>
-
-            <tbody id="tableBody">
-
-            </tbody>
+            <tbody id="tableBody"></tbody>
             <tfoot>
                 <tr>
                     <td>Total</td>
@@ -358,7 +329,7 @@
             </tfoot>
         </table>
 
-        <form id="trackerForm" class="form-row" style="margin-top: 20px;">
+        <form id="trackerForm" class="form-row">
             <input type="date" id="dateInput" required>
             <input type="number" id="callsInput" placeholder="Number of Calls" required>
             <input type="number" id="surveysInput" placeholder="Number of Surveys" required>
