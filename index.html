@@ -79,7 +79,7 @@
             const date = document.getElementById("dateInput").value;
             const calls = parseInt(document.getElementById("callsInput").value);
             const surveys = parseInt(document.getElementById("surveysInput").value);
-            const surveyTotal = parseInt(document.getElementById("surveyTotalInput").value);
+            const surveyTotal = parseFloat(document.getElementById("surveyTotalInput").value); // updated line
             const revenue = parseFloat(document.getElementById("revenueInput").value) || 0;
 
             if (!date || isNaN(calls) || isNaN(surveys) || isNaN(surveyTotal)) {
@@ -350,7 +350,7 @@
             <input type="date" id="dateInput" required>
             <input type="number" id="callsInput" placeholder="Number of Calls" required>
             <input type="number" id="surveysInput" placeholder="Number of Surveys" required>
-            <input type="number" id="surveyTotalInput" placeholder="Total Survey Score" required>
+            <input type="number" id="surveyTotalInput" step="0.01" placeholder="Total Survey Score" required> <!-- updated line -->
             <input type="number" id="revenueInput" step="0.01" placeholder="Revenue (optional)">
             <button type="submit">Submit</button>
             <button type="button" onclick="removeAll()">Remove All</button>
