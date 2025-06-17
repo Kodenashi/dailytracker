@@ -125,7 +125,7 @@
         <td><input type="number" id="editRevenue" value="${revenue}" step="0.01" /></td>
         <td>
             <button onclick="saveEdit(this, '${id}', '${date}')">Save</button>
-            <button onclick="loadEntries()">Cancel</button>
+            <button onclick="cancelEdit()">Cancel</button>
         </td>
     `;
         };
@@ -186,6 +186,9 @@
             });
 
             // Reload entries to refresh table
+            await loadEntries();
+        };
+        window.cancelEdit = async function() {
             await loadEntries();
         };
 
@@ -260,7 +263,7 @@
             max-width: 1100px;
             margin: 60px auto;
             padding: 30px;
-            background: rgba(255, 255, 245, 0.85);
+            background: rgba(255, 255, 245, 0.5);
             border: 1px solid #bda893;
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -279,7 +282,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            background-color: rgba(253, 250, 245, 0.85);
+            background-color: rgba(253, 250, 245, 0.4);
             border-radius: 10px;
             overflow: hidden;
             font-family: 'Rubik', sans-serif;
