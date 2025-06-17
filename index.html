@@ -19,7 +19,8 @@
             addDoc,
             getDocs,
             deleteDoc,
-            doc
+            doc,
+            setDoc
         } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
         import {
             getAnalytics
@@ -103,6 +104,32 @@
             row.remove();
             updateTotals();
         };
+        window.editRow = function(button) {
+            const row = button.closest("tr");
+            const id = row.dataset.id;
+
+            const date = row.cells[0].textContent;
+            const calls = parseInt(row.cells[1].textContent);
+            const surveys = parseInt(row.cells[2].textContent);
+            const revenue = parseFloat(row.cells[5].textContent.replace('$', ''));
+
+            const surveyTotal = ((parseFloat(row.cells[4].textContent.replace('%', '')) / 100) * (surveys * 5)).toFixed(2);
+
+            // Replace cells with input fields
+            row.innerHTML = `
+        <td>${date}</td>
+        <td><input type="number" id="editCalls" value="${calls}" /></td>
+        <td><input type="number" id="editSurveys" value="${surveys}" /></td>
+        <td>-</td>
+        <td><input type="number" id="editSurveyTotal" value="${surveyTotal}" step="0.01" /></td>
+        <td><input type="number" id="editRevenue" value="${revenue}" step="0.01" /></td>
+        <td>
+            <button onclick="saveEdit(this, '${id}', '${date}')">Save</button>
+            <button onclick="loadEntries()">Cancel</button>
+        </td>
+    `;
+        };
+
 
         window.removeAll = async function() {
             if (!confirm("Are you sure you want to remove all entries?")) return;
@@ -124,10 +151,44 @@
         <td>${percentage}%</td>
         <td>${surveyScore}%</td>
         <td>$${parseFloat(revenue).toFixed(2)}</td>
-        <td><button onclick="deleteRow(this)">Delete</button></td>
+        <td>
+        <button onclick="editRow(this)">Edit</button>
+        <button onclick="deleteRow(this)">Delete</button>
+        </td>
       `;
             tableBody.appendChild(row);
         }
+        window.saveEdit = async function(button, id, date) {
+            const row = button.closest("tr");
+
+            const calls = parseInt(row.querySelector("#editCalls").value);
+            const surveys = parseInt(row.querySelector("#editSurveys").value);
+            const surveyTotal = parseFloat(row.querySelector("#editSurveyTotal").value);
+            const revenue = parseFloat(row.querySelector("#editRevenue").value) || 0;
+
+            if (isNaN(calls) || isNaN(surveys) || isNaN(surveyTotal)) {
+                alert("Please enter valid numbers.");
+                return;
+            }
+
+            const percentage = ((surveys / calls) * 100).toFixed(2);
+            const perfectScore = surveys * 5;
+            const surveyScore = perfectScore > 0 ? ((surveyTotal / perfectScore) * 100).toFixed(2) : "0.00";
+
+            // Update Firestore
+            await setDoc(doc(db, "call_tracker", id), {
+                date,
+                calls,
+                surveys,
+                percentage,
+                surveyScore,
+                revenue
+            });
+
+            // Reload entries to refresh table
+            await loadEntries();
+        };
+
 
         function updateTotals() {
             const rows = document.querySelectorAll("#tableBody tr");
