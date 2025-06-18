@@ -118,34 +118,53 @@
             const surveyTotal = ((parseFloat(surveyScore.replace('%', '')) / 100) * (surveys * 5)).toFixed(2);
             const revenueValue = parseFloat(revenue.replace('$', ''));
 
-            // Save original HTML to revert later
             const originalHTML = row.innerHTML;
 
-            // Replace row with editable fields
-            row.innerHTML = `
-        <td>${date}</td>
-        <td><input type="number" id="editCalls" value="${calls}" /></td>
-        <td><input type="number" id="editSurveys" value="${surveys}" /></td>
-        <td>-</td>
-        <td><input type="number" id="editSurveyTotal" value="${surveyTotal}" step="0.01" /></td>
-        <td><input type="number" id="editRevenue" value="${revenueValue}" step="0.01" /></td>
-        <td>
-            <button onclick="saveEdit(this, '${id}', '${date}')">Save</button>
-            <button onclick="cancelEdit(this)">Cancel</button>
-        </td>
-    `;
+            // Fade out
+            row.classList.add('edit-fade');
+            row.classList.remove('show');
 
-            // Store original HTML on the row itself
-            row.dataset.original = originalHTML;
+            setTimeout(() => {
+                row.innerHTML = `
+            <td>${date}</td>
+            <td><input type="number" id="editCalls" value="${calls}" /></td>
+            <td><input type="number" id="editSurveys" value="${surveys}" /></td>
+            <td>-</td>
+            <td><input type="number" id="editSurveyTotal" value="${surveyTotal}" step="0.01" /></td>
+            <td><input type="number" id="editRevenue" value="${revenueValue}" step="0.01" /></td>
+            <td>
+                <button onclick="saveEdit(this, '${id}', '${date}')">Save</button>
+                <button onclick="cancelEdit(this)">Cancel</button>
+            </td>
+        `;
+
+                row.dataset.original = originalHTML;
+
+                // Fade in
+                void row.offsetWidth; // Force reflow
+                row.classList.add('show');
+            }, 150);
         };
+
 
         window.cancelEdit = function(button) {
             const row = button.closest("tr");
+
             if (row.dataset.original) {
-                row.innerHTML = row.dataset.original;
-                delete row.dataset.original;
+                // Fade out
+                row.classList.remove('show');
+
+                setTimeout(() => {
+                    row.innerHTML = row.dataset.original;
+                    delete row.dataset.original;
+
+                    // Fade in
+                    void row.offsetWidth;
+                    row.classList.add('show');
+                }, 150);
             }
         };
+
 
 
 
@@ -161,8 +180,10 @@
         function addRowToTable(id, date, calls, surveys, percentage, surveyScore, revenue) {
             const tableBody = document.getElementById("tableBody");
             const row = document.createElement("tr");
+            row.className = 'edit-fade show';
             row.dataset.id = id;
             row.innerHTML = `
+            
         <td>${date}</td>
         <td>${calls}</td>
         <td>${surveys}</td>
@@ -394,6 +415,15 @@
             h1 {
                 font-size: 36px;
             }
+        }
+
+        .edit-fade {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .edit-fade.show {
+            opacity: 1;
         }
     </style>
 </head>
