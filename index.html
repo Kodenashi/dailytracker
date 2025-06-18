@@ -111,24 +111,42 @@
             const date = row.cells[0].textContent;
             const calls = parseInt(row.cells[1].textContent);
             const surveys = parseInt(row.cells[2].textContent);
-            const revenue = parseFloat(row.cells[5].textContent.replace('$', ''));
+            const percentage = row.cells[3].textContent;
+            const surveyScore = row.cells[4].textContent;
+            const revenue = row.cells[5].textContent;
 
-            const surveyTotal = ((parseFloat(row.cells[4].textContent.replace('%', '')) / 100) * (surveys * 5)).toFixed(2);
+            const surveyTotal = ((parseFloat(surveyScore.replace('%', '')) / 100) * (surveys * 5)).toFixed(2);
+            const revenueValue = parseFloat(revenue.replace('$', ''));
 
-            // Replace cells with input fields
+            // Save original HTML to revert later
+            const originalHTML = row.innerHTML;
+
+            // Replace row with editable fields
             row.innerHTML = `
         <td>${date}</td>
         <td><input type="number" id="editCalls" value="${calls}" /></td>
         <td><input type="number" id="editSurveys" value="${surveys}" /></td>
         <td>-</td>
         <td><input type="number" id="editSurveyTotal" value="${surveyTotal}" step="0.01" /></td>
-        <td><input type="number" id="editRevenue" value="${revenue}" step="0.01" /></td>
+        <td><input type="number" id="editRevenue" value="${revenueValue}" step="0.01" /></td>
         <td>
             <button onclick="saveEdit(this, '${id}', '${date}')">Save</button>
-            <button onclick="cancelEdit()">Cancel</button>
+            <button onclick="cancelEdit(this)">Cancel</button>
         </td>
     `;
+
+            // Store original HTML on the row itself
+            row.dataset.original = originalHTML;
         };
+
+        window.cancelEdit = function(button) {
+            const row = button.closest("tr");
+            if (row.dataset.original) {
+                row.innerHTML = row.dataset.original;
+                delete row.dataset.original;
+            }
+        };
+
 
 
         window.removeAll = async function() {
