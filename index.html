@@ -294,61 +294,75 @@
             padding: 0;
             font-family: 'Rubik', sans-serif;
             background: url('https://i.imgur.com/PZ81D6Y.jpeg') no-repeat center center fixed;
+            /* Update this to your final image */
             background-size: cover;
-            color: #2e2e2e;
+            color: #2f4032;
+            /* Dark forest tone */
         }
 
         .container {
             max-width: 1100px;
             margin: 60px auto;
             padding: 30px;
-            background: rgba(255, 255, 245, 0.5);
-            border: 1px solid #bda893;
+            background: rgba(240, 248, 243, 0.5);
+            /* Soft green overlay */
+            border: 1px solid #7a9468;
+            /* Moss green */
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
 
         h1 {
             text-align: center;
             font-size: 48px;
             font-family: 'Rubik', sans-serif;
-            color: #4e3d2a;
+            color: #2f4032;
             margin-bottom: 30px;
             font-weight: 600;
             letter-spacing: 1px;
         }
 
+        .table-wrapper {
+            max-height: 700px;
+            overflow-y: auto;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            background-color: rgba(253, 250, 245, 0.4);
-            border-radius: 10px;
-            overflow: hidden;
+            background-color: rgba(239, 245, 235, 0.4);
+            /* Pale leaf green */
             font-family: 'Rubik', sans-serif;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            background-color: #c1d0b5;
+            z-index: 2;
+            color: #2f4032;
+        }
+
+        tfoot td {
+            position: sticky;
+            bottom: 0;
+            background-color: #c1d0b5;
+            z-index: 1;
+            font-weight: bold;
+            color: #2f4032;
         }
 
         th,
         td {
             padding: 12px;
             text-align: center;
-            border-bottom: 1px solid #dcd0c0;
+            border-bottom: 1px solid #b5c6ab;
             font-size: 14px;
-            color: #333;
-        }
-
-        th {
-            background-color: #d6cfc2;
-            color: #3f3f3f;
-            font-weight: 600;
+            color: #2f4032;
         }
 
         tr:nth-child(even) td {
-            background-color: rgba(255, 255, 255, 0.4);
-        }
-
-        tfoot td {
-            background-color: #ede4d1;
-            font-weight: bold;
+            background-color: rgba(239, 245, 235, 0.4);
         }
 
         .form-row {
@@ -365,20 +379,22 @@
             font-size: 14px;
             width: 180px;
             border-radius: 8px;
-            border: 1px solid #d4c1ae;
-            background: #fdfaf6;
-            color: #4e3d2a;
-            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #aac8a7;
+            /* Foliage green */
+            background: #f3f8f2;
+            color: #2f4032;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
         }
 
         .form-row input:focus {
             outline: none;
-            border-color: #a39e8e;
-            background-color: #fffdfa;
+            border-color: #7a9468;
+            background-color: #ffffff;
         }
 
         button {
-            background: #a39e8e;
+            background: #4f6f52;
+            /* Earthy forest green */
             color: #fff;
             border: none;
             padding: 10px 20px;
@@ -388,11 +404,11 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background 0.3s, transform 0.2s;
-            box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.15);
+            box-shadow: 1px 1px 6px rgba(0, 0, 0, 0.1);
         }
 
         button:hover {
-            background: #867f73;
+            background: #3b5740;
             transform: scale(1.05);
         }
 
@@ -426,37 +442,41 @@
             opacity: 1;
         }
     </style>
+
 </head>
 
 <body>
     <div class="container">
         <h1>Daily Calls/EOC Tracker</h1>
 
-        <table id="trackerTable">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Number of Calls</th>
-                    <th>Number of Surveys (EOC)</th>
-                    <th>Survey Take Rate</th>
-                    <th>Survey Score (%)</th>
-                    <th>Revenue</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody"></tbody>
-            <tfoot>
-                <tr>
-                    <td>Total</td>
-                    <td id="totalCalls">0</td>
-                    <td id="totalSurveys">0</td>
-                    <td id="totalPercentage">0%</td>
-                    <td id="averageSurveyScore">0%</td>
-                    <td id="totalRevenuePerCall">$0.00</td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
+        <div class="table-wrapper">
+            <table id="trackerTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Number of Calls</th>
+                        <th>Number of Surveys (EOC)</th>
+                        <th>Survey Take Rate</th>
+                        <th>Survey Score (%)</th>
+                        <th>Revenue</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+                <tfoot>
+                    <tr>
+                        <td>Total</td>
+                        <td id="totalCalls">0</td>
+                        <td id="totalSurveys">0</td>
+                        <td id="totalPercentage">0%</td>
+                        <td id="averageSurveyScore">0%</td>
+                        <td id="totalRevenuePerCall">$0.00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
 
         <form id="trackerForm" class="form-row" style="margin-top: 20px;">
             <input type="date" id="dateInput" required>
